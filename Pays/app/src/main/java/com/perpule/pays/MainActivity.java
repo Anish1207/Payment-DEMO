@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -28,10 +29,12 @@ public class MainActivity extends AppCompatActivity {
 
     Button btnSendOtp;
     EditText phNum;
-    EditText emailId;
+    EditText enterotp;
     ProgressBar progressBar;
+    Button btnValidate;
 
-    static final String API_URL = "https://micro-s-perpule.appspot.com/number?name=";
+    static final String SEND_OTP_URL = "https://20190529t163424-dot-paymentdemo-242005.appspot.com/sendotp?number=";
+    static final String VALIDATE_OTP_URL = "https://20190529t163424-dot-paymentdemo-242005.appspot.com/validateotp?otp=";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,19 +42,28 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         btnSendOtp = findViewById(R.id.btnSendOtp);
         phNum = findViewById(R.id.phnum);
-        emailId = findViewById(R.id.editText2);
         progressBar=findViewById(R.id.progressBar);
+        enterotp=findViewById(R.id.enterotp);
+
         btnSendOtp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new RetrieveFeedTask().execute();
+                new ReceiveOTP().execute();
+            }
+        });
+
+        btnValidate =findViewById(R.id.btnValidate);
+        btnValidate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new ValidateOtp().execute();
             }
         });
 
     }
 
 
-    class RetrieveFeedTask extends AsyncTask<Void, Void, String> {
+    class ReceiveOTP extends AsyncTask<Void, Void, String> {
 
         private Exception exception;
 
@@ -62,12 +74,11 @@ public class MainActivity extends AppCompatActivity {
 
         protected String doInBackground(Void... urls) {
             String phoneNumber = phNum.getText().toString();
-            String email = emailId.getText().toString();
             // TODO some validation here
 
 
             try {
-                URL url = new URL(API_URL + phoneNumber);
+                URL url = new URL(SEND_OTP_URL + phoneNumber);
                 //URL url = new URL(API_URL);
                 HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
                 try {
@@ -89,59 +100,15 @@ public class MainActivity extends AppCompatActivity {
                 return null;
             }
 
-
-            /*
-            String clientId = "merchant-perpule-stg";
-            String scope = "wallet";
-            String responseType = "token";
-            String merchantKey = "&!vj74@Ri&g6U1TI";
-
-            TreeMap<String, String> paytmParams = new TreeMap<String, String>();
-            paytmParams.put("email", email);
-            paytmParams.put("phone", phoneNumber);
-            paytmParams.put("clientId", clientId);
-            paytmParams.put("scope", scope);
-            paytmParams.put("responseType", responseType);
-
-            try {
-                URL transactionURL = new URL(API_URL);
-                JSONObject obj = new JSONObject(paytmParams);
-                String postData = obj.toString();
-
-                HttpURLConnection connection = (HttpURLConnection) transactionURL.openConnection();
-                connection.setRequestMethod("POST");
-                connection.setRequestProperty("Content-Type", "application/json");
-                connection.setUseCaches(false);
-                connection.setDoOutput(true);
-
-                DataOutputStream requestWriter = new DataOutputStream(connection.getOutputStream());
-                requestWriter.writeBytes(postData);
-                requestWriter.close();
-                String responseData = "";
-                InputStream is = connection.getInputStream();
-                BufferedReader responseReader = new BufferedReader(new InputStreamReader(is));
-                if ((responseData = responseReader.readLine()) != null) {
-                    System.out.append("Response Json = " + responseData);
-                }
-                System.out.append("Requested Json = " + postData + " ");
-                responseReader.close();
-                return responseData;
-
-            }
-
-            catch (Exception exception) {
-                exception.printStackTrace();
-                return null;
-            }
-            */
         }
-
 
         protected void onPostExecute(String response) {
             if (response == null) {
                 response = "THERE WAS AN ERROR";
             }
-            progressBar.setVisibility(View.GONE);
+
+
+        progressBar.setVisibility(View.GONE);
             Log.i("INFO", response);
 
             // TODO check this.exception
@@ -160,6 +127,74 @@ public class MainActivity extends AppCompatActivity {
 //                .
 //                .
 //       }
+        }
+
+
+    }
+
+    class ValidateOtp extends AsyncTask<Void, Void, String> {
+
+        private Exception exception;
+
+        protected void onPreExecute() {
+            progressBar.setVisibility(View.VISIBLE);
+
+        }
+
+        protected String doInBackground(Void... urls) {
+            String otp = enterotp.getText().toString();
+            // TODO some validation here
+
+
+            try {
+                URL url = new URL(VALIDATE_OTP_URL + otp);
+                //URL url = new URL(API_URL);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                try {
+                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                    StringBuilder stringBuilder = new StringBuilder();
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        stringBuilder.append(line).append("\n");
+                    }
+                    bufferedReader.close();
+                    return stringBuilder.toString();
+                }
+                finally{
+                    urlConnection.disconnect();
+                }
+            }
+            catch(Exception e) {
+                Log.e("ERROR", e.getMessage(), e);
+                return null;
+            }
+
+        }
+
+        protected void onPostExecute(String response) {
+            if (response == null) {
+                response = "THERE WAS AN ERROR";
+            }
+            else {
+
+                TextView status=findViewById(R.id.txtValidate);
+                try {
+                    JSONObject jobj= new JSONObject(response);
+                    if(jobj.has("status") && jobj.getString("status").equalsIgnoreCase("failure")) {
+                        status.setText("OTP Failed!");
+                    }
+                    else {
+                        status.setText("OTP verified!!");
+                    }
+
+                } catch (Exception e) {
+
+                }
+            }
+
+            progressBar.setVisibility(View.GONE);
+            Log.i("INFO", response);
+
         }
 
 
