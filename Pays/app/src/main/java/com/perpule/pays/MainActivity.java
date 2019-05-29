@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
     EditText emailId;
     ProgressBar progressBar;
 
-    static final String API_URL = "https://accounts-uat.paytm.com/signin/otp";
+    static final String API_URL = "https://micro-s-perpule.appspot.com/number?name=";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,10 +65,10 @@ public class MainActivity extends AppCompatActivity {
             String email = emailId.getText().toString();
             // TODO some validation here
 
-            /*
+
             try {
-                //URL url = new URL(API_URL + "phone=" + phoneNumber);
-                URL url = new URL(API_URL);
+                URL url = new URL(API_URL + phoneNumber);
+                //URL url = new URL(API_URL);
                 HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
                 try {
                     BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
@@ -88,9 +88,9 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("ERROR", e.getMessage(), e);
                 return null;
             }
-            */
 
 
+            /*
             String clientId = "merchant-perpule-stg";
             String scope = "wallet";
             String responseType = "token";
@@ -133,9 +133,9 @@ public class MainActivity extends AppCompatActivity {
                 exception.printStackTrace();
                 return null;
             }
-
-
+            */
         }
+
 
         protected void onPostExecute(String response) {
             if (response == null) {
