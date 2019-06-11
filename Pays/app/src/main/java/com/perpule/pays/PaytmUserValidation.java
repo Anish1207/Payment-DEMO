@@ -22,7 +22,7 @@ import java.net.URL;
 
 import es.dmoral.toasty.Toasty;
 
-public class UserValidationPaytm extends AppCompatActivity {
+public class PaytmUserValidation extends AppCompatActivity {
 
 
     private String PhoneNumber;
@@ -31,6 +31,7 @@ public class UserValidationPaytm extends AppCompatActivity {
     ProgressBar progressBar;
     Button btnValidate;
     protected ProgressDialog dialog;
+    Button btnResend;
 
     static final String SEND_OTP_URL = "https://micro-s-perpule.appspot.com/sendotp?number=";
     static final String VALIDATE_OTP_URL = "https://micro-s-perpule.appspot.com/validateotp?";
@@ -50,15 +51,23 @@ public class UserValidationPaytm extends AppCompatActivity {
         progressBar=findViewById(R.id.progressBar);
         enterotp=findViewById(R.id.enterotp);
 
-        Toasty.info(UserValidationPaytm.this, "An OTP has been sent to your mobile number!", Toast.LENGTH_SHORT, true).show();
+        Toasty.info(PaytmUserValidation.this, "An OTP has been sent to your mobile number!", Toast.LENGTH_SHORT, true).show();
 
-        new UserValidationPaytm.ReceiveOTP().execute();
+        new PaytmUserValidation.ReceiveOTP().execute();
+        btnResend=findViewById(R.id.btnResend);
+        btnResend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new PaytmUserValidation.ReceiveOTP().execute();
+            }
+        });
+
 
         btnValidate =findViewById(R.id.btnValidate);
         btnValidate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new UserValidationPaytm.ValidateOtp().execute();
+                new PaytmUserValidation.ValidateOtp().execute();
             }
         });
     }
@@ -66,7 +75,6 @@ public class UserValidationPaytm extends AppCompatActivity {
     class ReceiveOTP extends AsyncTask<Void, Void, String> {
 
         private Exception exception;
-
         protected void onPreExecute() {
             progressBar.setVisibility(View.VISIBLE);
 
@@ -138,7 +146,7 @@ public class UserValidationPaytm extends AppCompatActivity {
 
         protected void onPreExecute() {
             super.onPreExecute();
-            dialog = Utility.getProgressDialog(UserValidationPaytm.this);
+            dialog = Utility.getProgressDialog(PaytmUserValidation.this);
             dialog.setCanceledOnTouchOutside(false);
             dialog.setCancelable(false);
             if (dialog != null) {
@@ -195,8 +203,7 @@ public class UserValidationPaytm extends AppCompatActivity {
 
         protected void onPostExecute(String response) {
             if (response == null) {
-                response = "THERE WAS AN ERROR";
-            }
+                Toasty.error(PaytmUserValidation.this, "Null Response", Toast.LENGTH_SHORT, true).show();            }
             else {
                 //TODO move ahead with flow of paytm flow
                 TextView status=findViewById(R.id.txtValidate);
@@ -204,14 +211,14 @@ public class UserValidationPaytm extends AppCompatActivity {
                     JSONObject jobj= new JSONObject(response);
                     if(jobj.has("status") && jobj.getString("status").equalsIgnoreCase("failure")) {
                         dialog.dismiss();
-                        Toasty.error(UserValidationPaytm.this, "Verification failed!", Toast.LENGTH_SHORT, true).show();
+                        Toasty.error(PaytmUserValidation.this, "Verification failed!", Toast.LENGTH_SHORT, true).show();
 
                     }
                     else {
                         //dismiss loading page
                         dialog.dismiss();
-                        Toasty.success(UserValidationPaytm.this, "You are now a registered customer!", Toast.LENGTH_SHORT, true).show();
-                        Intent intent =new Intent(UserValidationPaytm.this, Payment.class);
+                        Toasty.success(PaytmUserValidation.this, "You are now a registered customer!", Toast.LENGTH_SHORT, true).show();
+                        Intent intent =new Intent(PaytmUserValidation.this, Payment.class);
                         Bundle extras= new Bundle();
                         extras.putString("number",PhoneNumber);
                         extras.putString("bill",BillAmount);

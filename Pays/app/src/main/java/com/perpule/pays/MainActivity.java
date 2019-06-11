@@ -3,43 +3,33 @@ package com.perpule.pays;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
-
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.TreeMap;
 
 import es.dmoral.toasty.Toasty;
-
-import com.perpule.pays.Utility;
 
 
 public class MainActivity extends AppCompatActivity {
 
 
+    private  static String MODE=null;
     protected ProgressDialog dialog;
     Button btnPaytm;
     EditText PhoneNumber;
     EditText Bill;
-    static final String CHECK_VALIDATION_URL = "https://micro-s-perpule.appspot.com/checkexistence?number=";
+    private String transactionId;
+    static final String CHECK_EXISTENCE_URL = "https://micro-s-perpule.appspot.com/checklinking?";
 
 
     @Override
@@ -54,13 +44,15 @@ public class MainActivity extends AppCompatActivity {
         btnPaytm.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new MainActivity.CheckOTP().execute();
+                //For PayTM
+                MODE = "paytm";
+                new MainActivity.CheckLinking().execute();
             }
         });
 
     }
 
-    class CheckOTP extends AsyncTask<Void, Integer, String> {
+    class CheckLinking extends AsyncTask<Void, Integer, String> {
 
 
 
@@ -81,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
 
 
             try {
-                URL url = new URL(CHECK_VALIDATION_URL + Number);
+                URL url = new URL(CHECK_EXISTENCE_URL + "mode=" + MODE + "&number=" + Number + "&totalamount="+Bill.getText().toString());
                 //URL url = new URL(API_URL);
                 HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
                 try {
@@ -102,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
                         while(counter <= 4)
                         {
                             //Wait 850 milliseconds
-                            this.wait(850);
+                            this.wait(20);
                             //Increment the counter
                             counter++;
                             //Set the current progress.
@@ -128,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
 
         protected void onPostExecute(String response) {
             if (response == null) {
-                response = "THERE WAS AN ERROR";
+                dialog.dismiss();
                 Toasty.error(MainActivity.this, "null response!", Toast.LENGTH_SHORT, true).show();
             }
             else {
@@ -136,28 +128,34 @@ public class MainActivity extends AppCompatActivity {
                 TextView status=findViewById(R.id.txtValidate);
                 try {
                     Log.i("response:",response);
-                    if(response.trim().equalsIgnoreCase("yes")) {
-                        dialog.dismiss();
-                        Toasty.success(MainActivity.this, "Your paytm account is already linked with us", Toast.LENGTH_SHORT, true).show();
-                        //TODO directly to checksum;
-                    }
-                    else if (response.trim().equalsIgnoreCase("no")) {
+                    if(response.trim().equalsIgnoreCase("false")) {
                         //dismiss loading dialogue
                         dialog.dismiss();
 
                         //starting new intent
-                        Intent intent =new Intent(MainActivity.this, UserValidationPaytm.class);
+                        Intent intent =new Intent(MainActivity.this, PaytmUserValidation.class);
                         Bundle extras= new Bundle();
                         extras.putString("number",PhoneNumber.getText().toString());
                         extras.putString("bill",Bill.getText().toString());
                         intent.putExtras(extras);
                         startActivity(intent);
-                    }
-                    else{
-                        dialog.dismiss();
-                        Toasty.error(MainActivity.this, "Response:'"+response+"'", Toast.LENGTH_LONG, true).show();
 
                     }
+                    else {
+                        dialog.dismiss();
+                        Toasty.success(MainActivity.this, "Your account is already linked with us!", Toast.LENGTH_SHORT, true).show();
+                        //TODO directly to checksum;
+                        transactionId=response.trim();
+                        Intent intent =new Intent(MainActivity.this, Payment.class);
+                        Bundle extras= new Bundle();
+                        extras.putString("number",PhoneNumber.getText().toString());
+                        extras.putString("bill",Bill.getText().toString());
+                        extras.putString("transactionId", transactionId);
+                        extras.putString("mode",MODE);
+                        intent.putExtras(extras);
+                        startActivity(intent);
+                    }
+
 
                 } catch (Exception e) {
                     Log.e("ERROR", e.getMessage(), e);
